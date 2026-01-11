@@ -1,0 +1,9 @@
+# Logs
+*.log
+
+# Local config / running version
+autodarts_mqtt.py
+
+# Python cache
+__pycache__/
+
