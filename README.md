@@ -19,6 +19,9 @@ to build dashboards, automations and statistics around your dart games.
 - 💻 Works on **macOS & Linux**
 - 🧩 Single-file, easy to extend
 
+<img width="348" height="458" alt="Scherm­afbeelding 2026-01-12 om 20 23 09" src="https://github.com/user-attachments/assets/b82d850b-0aaf-4a86-8060-440ca30a30e0" />
+
+
 ---
 
 ## 🧠 How it works
