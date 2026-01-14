@@ -1,69 +1,65 @@
 # 🎯 Autodarts MQTT Bridge
 
-A lightweight Python bridge that connects **Autodarts** to **MQTT** and **Home Assistant**  
-using **MQTT Discovery**.
+A lightweight Python bridge that connects **Autodarts** to **Home Assistant** using **MQTT Discovery**.
 
-This project exposes dart throws and scores as Home Assistant entities, making it easy
-to build dashboards, automations and statistics around your dart games.
+This project exposes live dart throws, summaries, totals, and Autodarts availability as Home Assistant sensors — without any manual YAML configuration.
 
 ---
 
 ## ✨ Features
 
-- 🎯 Dart 1 / Dart 2 / Dart 3 sensors
-- 🧾 Throw Summary (e.g. `T20 | 20 | 5`)
-- ➕ Throw Total (e.g. `85`, `140`, `180`)
-- 🔔 180 detection (binary sensor)
-- 🏠 Automatic Home Assistant MQTT Discovery
-- 🔄 Auto reconnect on WebSocket drop
-- 💻 Works on **macOS & Linux**
-- 🧩 Single-file, easy to extend
-
-<img width="348" height="458" alt="Scherm­afbeelding 2026-01-12 om 20 23 09" src="https://github.com/user-attachments/assets/b82d850b-0aaf-4a86-8060-440ca30a30e0" />
-
-
----
-
-## 🧠 How it works
-
-- Listens to Autodarts events via WebSocket
-- Fetches the current game state via HTTP
-- Publishes game state to MQTT as JSON
-- Home Assistant discovers sensors automatically via MQTT Discovery
-
-No Home Assistant YAML configuration required.
+- 🎯 Dart 1 / 2 / 3 sensors (`T20`, `D16`, `5`, `M`)
+- 📋 Throw Summary sensor (`T20 | M | 5`)
+- ➕ Throw Total sensor (numeric score)
+- 🎯 180 detection (binary sensor)
+- 📡 **Autodarts Status sensor** (real online/offline detection)
+- 🏠 Home Assistant **MQTT Discovery**
+- 🔁 Auto reconnect
+- 💥 Offline detection when Autodarts stops or the host shuts down
+- 🖥️ Works on **macOS**, **Linux**, and **Windows**
 
 ---
 
 ## 📦 Requirements
 
 - Python **3.9+**
-- Autodarts running
-- MQTT broker (e.g. Mosquitto)
-- Home Assistant (optional, but recommended)
+- An existing **MQTT broker**
+- Autodarts running and reachable on the network
+- Home Assistant with MQTT integration enabled
 
-Python dependencies:
+---
 
-```bash
+## 📥 Installation
+
+Follow the steps below to install and run the Autodarts MQTT Bridge.
+
+
+1️⃣ Clone the repository
+
+``
+git clone https://github.com/Quevinsta/autodarts-mqtt.git
+cd autodarts-mqtt 
+``
+
+2️⃣ Install Python dependencies
+
+Make sure Python 3.9 or newer is installed.
+Then install the required packages:
+
+``
 pip install paho-mqtt websocket-client requests
+``
 
+3️⃣ Configure the script
 
+Create your running configuration from the example file:
 
-## 🚀 Installation & Usage
-
-### 1️⃣ Get the script
-
-This repository contains an **example configuration**.
-
-Copy the example file:
-
-```bash
+``
 cp autodarts_mqtt_example.py autodarts_mqtt.py
+``
 
-### 2️⃣ Configure
-
-Edit the CONFIG section at the top of autodarts_mqtt.py:
-
+Open autodarts_mqtt.py and update the CONFIG section with your own details:
+```python
 AUTODARTS_WS_URL = "ws://AUTODARTS_IP:3180/api/events"
 AUTODARTS_HTTP_URL = "http://AUTODARTS_IP:3180"
 
@@ -71,8 +67,22 @@ MQTT_HOST = "MQTT_BROKER_IP"
 MQTT_PORT = 1883
 MQTT_USERNAME = "MQTT_USERNAME"
 MQTT_PASSWORD = "MQTT_PASSWORD"
+```
 
-### 3️⃣ Run
+4️⃣ Run the script
+
+Start the bridge using:
+
+``
 python3 autodarts_mqtt.py
+``
 
-The script will keep running and automatically reconnect if needed.
+If everything is working correctly, you should see output similar to:
+```python
+Connected to Autodarts WebSocket
+🎯 Throw published
+📡 Status: online
+```
+
+
+The script will now automatically create all required entities in Home Assistant using MQTT Discovery.
