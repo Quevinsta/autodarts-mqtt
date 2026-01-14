@@ -1,17 +1,21 @@
 """
-Autodarts MQTT Bridge (Example)
-===============================
+Autodarts MQTT Bridge
+====================
 
-Bridges Autodarts to MQTT & Home Assistant using MQTT Discovery.
+Final running version with REAL Autodarts status detection.
 
-Copy this file to `autodarts_mqtt.py` and fill in the CONFIG section.
+Status logic:
+- ON  -> Autodarts HTTP API reachable
+- OFF -> Autodarts stopped / unreachable
+- OFF -> script crash or Mac shutdown (MQTT LWT)
 
 Features:
 - Dart 1 / 2 / 3 sensors (T20 / D16 / 5 / M)
 - Throw Summary (T20 | M | 5)
-- Throw Total (numeric)
-- 180 detection (binary sensor)
-- MQTT Discovery (no HA YAML required)
+- Throw Total
+- 180 detection
+- Autodarts Status (connectivity)
+- MQTT Discovery
 - Auto reconnect
 """
 
@@ -25,15 +29,18 @@ import paho.mqtt.client as mqtt
 # ================== CONFIG ========================
 # ==================================================
 
-AUTODARTS_WS_URL = "ws://AUTODARTS_IP:3180/api/events"
-AUTODARTS_HTTP_URL = "http://AUTODARTS_IP:3180"
+AUTODARTS_WS_URL = "ws://192.168.178.XXX:3180/api/events"
+AUTODARTS_HTTP_URL = "http://192.168.178.XXX:3180"
 
-MQTT_HOST = "MQTT_BROKER_IP"
+MQTT_HOST = "192.168.178.XXX"
 MQTT_PORT = 1883
 MQTT_USERNAME = "MQTT_USERNAME"
 MQTT_PASSWORD = "MQTT_PASSWORD"
 
 MQTT_STATE_TOPIC = "autodarts/game/state"
+MQTT_STATUS_TOPIC = "autodarts/status"
+
+STATUS_CHECK_INTERVAL = 10  # seconds
 
 # ==================================================
 # ==================================================
@@ -46,11 +53,21 @@ GAME_STATE_ENDPOINTS = [
     "/api/state",
 ]
 
+LAST_STATUS_CHECK = 0
+LAST_STATUS = None
+
 # ==================================================
-# MQTT SETUP
+# MQTT SETUP (with LWT)
 # ==================================================
 mqttc = mqtt.Client()
 mqttc.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+
+mqttc.will_set(
+    MQTT_STATUS_TOPIC,
+    payload="offline",
+    retain=True,
+)
+
 mqttc.connect(MQTT_HOST, MQTT_PORT)
 mqttc.loop_start()
 
@@ -65,45 +82,21 @@ def publish_discovery():
         "model": "Camera Dartboard",
     }
 
-    dart_template_0 = (
-        "{{ value_json.throws[0].segment.multiplier == 0 and 'M' "
-        "or value_json.throws[0].segment.multiplier == 3 and 'T' ~ value_json.throws[0].segment.number "
-        "or value_json.throws[0].segment.multiplier == 2 and 'D' ~ value_json.throws[0].segment.number "
-        "or value_json.throws[0].segment.number }}"
-    )
-
-    dart_template_1 = (
-        "{{ value_json.throws[1].segment.multiplier == 0 and 'M' "
-        "or value_json.throws[1].segment.multiplier == 3 and 'T' ~ value_json.throws[1].segment.number "
-        "or value_json.throws[1].segment.multiplier == 2 and 'D' ~ value_json.throws[1].segment.number "
-        "or value_json.throws[1].segment.number }}"
-    )
-
-    dart_template_2 = (
-        "{{ value_json.throws[2].segment.multiplier == 0 and 'M' "
-        "or value_json.throws[2].segment.multiplier == 3 and 'T' ~ value_json.throws[2].segment.number "
-        "or value_json.throws[2].segment.multiplier == 2 and 'D' ~ value_json.throws[2].segment.number "
-        "or value_json.throws[2].segment.number }}"
-    )
+    def dart_template(i):
+        return (
+            "{{ value_json.throws[%d].segment.multiplier == 0 and 'M' "
+            "or value_json.throws[%d].segment.multiplier == 3 and 'T' ~ value_json.throws[%d].segment.number "
+            "or value_json.throws[%d].segment.multiplier == 2 and 'D' ~ value_json.throws[%d].segment.number "
+            "or value_json.throws[%d].segment.number }}"
+        ) % (i, i, i, i, i, i)
 
     sensors = {
-        "autodarts_dart_1": {
-            "name": "Autodarts Dart 1",
-            "value_template": dart_template_0,
-        },
-        "autodarts_dart_2": {
-            "name": "Autodarts Dart 2",
-            "value_template": dart_template_1,
-        },
-        "autodarts_dart_3": {
-            "name": "Autodarts Dart 3",
-            "value_template": dart_template_2,
-        },
+        "autodarts_dart_1": {"name": "Autodarts Dart 1", "value_template": dart_template(0)},
+        "autodarts_dart_2": {"name": "Autodarts Dart 2", "value_template": dart_template(1)},
+        "autodarts_dart_3": {"name": "Autodarts Dart 3", "value_template": dart_template(2)},
         "autodarts_throw_summary": {
             "name": "Autodarts Throw Summary",
-            "value_template": (
-                f"{dart_template_0} | {dart_template_1} | {dart_template_2}"
-            ),
+            "value_template": f"{dart_template(0)} | {dart_template(1)} | {dart_template(2)}",
         },
         "autodarts_throw_total": {
             "name": "Autodarts Throw Total",
@@ -137,24 +130,36 @@ def publish_discovery():
             retain=True,
         )
 
-    binary_180 = {
-        "name": "Autodarts 180",
-        "state_topic": MQTT_STATE_TOPIC,
-        "value_template": (
-            "{{ value_json.throws | length == 3 and "
-            "value_json.throws[0].segment.multiplier == 3 and value_json.throws[0].segment.number == 20 and "
-            "value_json.throws[1].segment.multiplier == 3 and value_json.throws[1].segment.number == 20 and "
-            "value_json.throws[2].segment.multiplier == 3 and value_json.throws[2].segment.number == 20 }}"
-        ),
-        "payload_on": "True",
-        "payload_off": "False",
-        "unique_id": "autodarts_180",
-        "device": device,
-    }
-
     mqttc.publish(
         "homeassistant/binary_sensor/autodarts_180/config",
-        json.dumps(binary_180),
+        json.dumps({
+            "name": "Autodarts 180",
+            "state_topic": MQTT_STATE_TOPIC,
+            "value_template": (
+                "{{ value_json.throws | length == 3 and "
+                "value_json.throws[0].segment.multiplier == 3 and value_json.throws[0].segment.number == 20 and "
+                "value_json.throws[1].segment.multiplier == 3 and value_json.throws[1].segment.number == 20 and "
+                "value_json.throws[2].segment.multiplier == 3 and value_json.throws[2].segment.number == 20 }}"
+            ),
+            "payload_on": "True",
+            "payload_off": "False",
+            "unique_id": "autodarts_180",
+            "device": device,
+        }),
+        retain=True,
+    )
+
+    mqttc.publish(
+        "homeassistant/binary_sensor/autodarts_status/config",
+        json.dumps({
+            "name": "Autodarts Status",
+            "state_topic": MQTT_STATUS_TOPIC,
+            "payload_on": "online",
+            "payload_off": "offline",
+            "device_class": "connectivity",
+            "unique_id": "autodarts_status",
+            "device": device,
+        }),
         retain=True,
     )
 
@@ -168,32 +173,55 @@ def fetch_game_state():
     for path in GAME_STATE_ENDPOINTS:
         try:
             r = requests.get(AUTODARTS_HTTP_URL + path, timeout=1)
-            if r.status_code == 200 and r.text.strip().startswith("{"):
+            if r.status_code == 200 and r.text.startswith("{"):
                 return r.json()
         except Exception:
             pass
     return None
+
+
+def autodarts_is_online():
+    try:
+        r = requests.get(AUTODARTS_HTTP_URL + "/api/state", timeout=1)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def publish_status():
+    global LAST_STATUS, LAST_STATUS_CHECK
+
+    if time.time() - LAST_STATUS_CHECK < STATUS_CHECK_INTERVAL:
+        return
+
+    LAST_STATUS_CHECK = time.time()
+    online = autodarts_is_online()
+    new_status = "online" if online else "offline"
+
+    if new_status != LAST_STATUS:
+        mqttc.publish(MQTT_STATUS_TOPIC, new_status, retain=True)
+        LAST_STATUS = new_status
+        print(f"📡 Status: {new_status}")
 
 # ==================================================
 # WEBSOCKET CALLBACKS
 # ==================================================
 def on_message(ws, message):
     try:
-        data = json.loads(message)
-        if data.get("type") == "motion_state":
+        publish_status()
+
+        if json.loads(message).get("type") == "motion_state":
             time.sleep(0.3)
             state = fetch_game_state()
             if state:
                 mqttc.publish(MQTT_STATE_TOPIC, json.dumps(state))
                 print("🎯 Throw published")
+
     except Exception as e:
         print("❌ Error:", e)
 
 def on_open(ws):
     print("✅ Connected to Autodarts WebSocket")
-
-def on_error(ws, error):
-    print("❌ WebSocket error:", error)
 
 def on_close(ws, *args):
     print("🔌 WebSocket closed")
@@ -202,12 +230,10 @@ def on_close(ws, *args):
 # MAIN LOOP
 # ==================================================
 while True:
-    ws = websocket.WebSocketApp(
+    websocket.WebSocketApp(
         AUTODARTS_WS_URL,
         on_message=on_message,
         on_open=on_open,
-        on_error=on_error,
         on_close=on_close,
-    )
-    ws.run_forever()
+    ).run_forever()
     time.sleep(2)
