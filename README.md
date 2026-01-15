@@ -2,11 +2,12 @@
 ![Downloads](https://img.shields.io/github/downloads/Quevinsta/autodarts-mqtt/total)
 ![Downloads latest](https://img.shields.io/github/downloads/Quevinsta/autodarts-mqtt/latest/total)
 ![Windows Build](https://github.com/Quevinsta/autodarts-mqtt/actions/workflows/build-windows.yml/badge.svg)
-![Last commit](https://img.shields.io/github/last-commit/Quevinsta/autodarts-mqtt)
-![License](https://img.shields.io/github/license/Quevinsta/autodarts-mqtt)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-41BDF5?logo=home-assistant&logoColor=white)
+![MQTT](https://img.shields.io/badge/MQTT-Required-orange)
+![Autodarts Community](https://img.shields.io/badge/Autodarts-Community-purple)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)
+![License](https://img.shields.io/github/license/Quevinsta/autodarts-mqtt)
 ![Stars](https://img.shields.io/github/stars/Quevinsta/autodarts-mqtt?style=social)
-
 
 # Autodarts MQTT Bridge
 
