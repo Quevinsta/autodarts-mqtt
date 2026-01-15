@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-"""
-Autodarts MQTT Bridge (Example)
-
-This script connects Autodarts to Home Assistant using MQTT Discovery.
-It publishes dart throws, numeric values, totals, and status information.
-
-Before use:
-- Copy this file to `autodarts_mqtt.py`
-- Replace all placeholders in the CONFIG section
-"""
 
 import json
 import time
@@ -18,25 +8,21 @@ import websocket
 import paho.mqtt.client as mqtt
 
 # ==================================================
-# CONFIG (EDIT THESE VALUES)
+# CONFIG
 # ==================================================
 
-# Autodarts
-AUTODARTS_WS_URL = "ws://AUTODARTS_IP:3180/api/events"
-AUTODARTS_HTTP_URL = "http://AUTODARTS_IP:3180"
+AUTODARTS_WS_URL = "ws://192.168.178.186:3180/api/events"
+AUTODARTS_HTTP_URL = "http://192.168.178.186:3180"
 
-# MQTT
-MQTT_HOST = "MQTT_BROKER_IP"
+MQTT_HOST = "192.168.178.90"
 MQTT_PORT = 1883
-MQTT_USERNAME = "MQTT_USERNAME"
-MQTT_PASSWORD = "MQTT_PASSWORD"
+MQTT_USERNAME = "homeassistant"
+MQTT_PASSWORD = "aiPhebueshoo1Veid7dieRau6ohj4OoguoV0Joiz4ohshahqu0woo0Ahkaid2lei"
 
-# MQTT Topics
 MQTT_BASE = "autodarts"
 MQTT_STATE_TOPIC = f"{MQTT_BASE}/state"
 MQTT_STATUS_TOPIC = f"{MQTT_BASE}/status"
 
-# Home Assistant Discovery
 DISCOVERY_PREFIX = "homeassistant"
 DEVICE_ID = "autodarts_camera"
 
@@ -66,7 +52,7 @@ mqttc.loop_start()
 DEVICE_INFO = {
     "identifiers": [DEVICE_ID],
     "name": "Autodarts",
-    "manufacturer": "Community",
+    "manufacturer": "Quevinsta",
     "model": "Autodarts MQTT Bridge",
     "sw_version": "1.1.2"
 }
@@ -113,7 +99,7 @@ def publish_discovery():
         retain=True
     )
 
-    # Status binary sensor
+    # Status sensor
     payload_status = {
         "name": "Autodarts Status",
         "state_topic": MQTT_STATUS_TOPIC,
@@ -192,6 +178,7 @@ def publish_state(state):
 
     for i in range(min(3, len(throws))):
         seg = throws[i].get("segment", {})
+        name = seg.get("name", "")
         mult = seg.get("multiplier", 0)
         num = seg.get("number", 0)
 
@@ -270,7 +257,7 @@ def on_close(ws):
 # ==================================================
 
 if __name__ == "__main__":
-    print("🚀 Starting Autodarts MQTT Bridge (example)")
+    print("🚀 Starting Autodarts MQTT Bridge")
 
     publish_discovery()
     publish_initial_state()
