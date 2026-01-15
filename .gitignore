@@ -15,3 +15,18 @@ build/
 *.backup
 *.broken
 
+# Local / private files
+autodarts_mqtt.py
+config.json
+autodarts_mqtt_example_backup.py
+
+# Build artifacts
+pkgroot/
+build/
+dist/
+*.pkg
+*.exe
+
+# macOS
+.DS_Store
+
