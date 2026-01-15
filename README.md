@@ -1,3 +1,10 @@
+![GitHub release](https://img.shields.io/github/v/release/Quevinsta/autodarts-mqtt?include_prereleases=false)
+![Windows Build](https://github.com/Quevinsta/autodarts-mqtt/actions/workflows/build-windows.yml/badge.svg)
+![Last commit](https://img.shields.io/github/last-commit/Quevinsta/autodarts-mqtt)
+![License](https://img.shields.io/github/license/Quevinsta/autodarts-mqtt)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)
+![Stars](https://img.shields.io/github/stars/Quevinsta/autodarts-mqtt?style=social)
+
 # Autodarts MQTT Bridge
 
 Autodarts MQTT Bridge connects **Autodarts** to **Home Assistant** using **MQTT**.  
