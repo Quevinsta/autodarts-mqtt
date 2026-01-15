@@ -1,9 +1,17 @@
+# Build output
+dist/
+build/
+*.spec
+*.pkg
+*.exe
+
 # Logs
 *.log
 
-# Local config / running version
-autodarts_mqtt.py
+# macOS
+.DS_Store
 
-# Python cache
-__pycache__/
+# Backups
+*.backup
+*.broken
 
