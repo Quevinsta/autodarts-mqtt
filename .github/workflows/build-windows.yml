@@ -1,3 +1,4 @@
+# Windows build workflow
 name: Build Windows Executable
 
 on:
