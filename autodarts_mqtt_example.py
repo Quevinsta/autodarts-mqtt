@@ -2,45 +2,69 @@
 """
 Autodarts MQTT Bridge (Example)
 
-This script connects Autodarts to Home Assistant using MQTT Discovery.
-It publishes dart throws, numeric values, totals, and status information.
-
-Before use:
-- Copy this file to `autodarts_mqtt.py`
-- Replace all placeholders in the CONFIG section
+This example uses config.json for all settings.
+It is safe to publish and intended for GitHub releases.
 """
 
 import json
 import time
 import threading
+import sys
+from pathlib import Path
+
 import requests
 import websocket
 import paho.mqtt.client as mqtt
 
 # ==================================================
-# CONFIG (EDIT THESE VALUES)
+# LOAD CONFIG
 # ==================================================
 
-# Autodarts
-AUTODARTS_WS_URL = "ws://AUTODARTS_IP:3180/api/events"
-AUTODARTS_HTTP_URL = "http://AUTODARTS_IP:3180"
+def load_config():
+    config_path = Path(__file__).parent / "config.json"
 
-# MQTT
-MQTT_HOST = "MQTT_BROKER_IP"
-MQTT_PORT = 1883
-MQTT_USERNAME = "MQTT_USERNAME"
-MQTT_PASSWORD = "MQTT_PASSWORD"
+    if not config_path.exists():
+        print(f"❌ config.json not found at: {config_path}")
+        sys.exit(1)
 
-# MQTT Topics
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+    required_keys = [
+        "AUTODARTS_WS_URL",
+        "AUTODARTS_HTTP_URL",
+        "MQTT_HOST",
+        "MQTT_PORT"
+    ]
+
+    for key in required_keys:
+        value = config.get(key)
+        if not value or "CHANGEME" in str(value):
+            print("❌ config.json is not configured yet.")
+            print(f"➡️ Please edit: {config_path}")
+            sys.exit(1)
+
+    return config
+
+
+config = load_config()
+
+AUTODARTS_WS_URL = config["AUTODARTS_WS_URL"]
+AUTODARTS_HTTP_URL = config["AUTODARTS_HTTP_URL"]
+
+MQTT_HOST = config["MQTT_HOST"]
+MQTT_PORT = int(config["MQTT_PORT"])
+MQTT_USERNAME = config.get("MQTT_USERNAME", "")
+MQTT_PASSWORD = config.get("MQTT_PASSWORD", "")
+
 MQTT_BASE = "autodarts"
 MQTT_STATE_TOPIC = f"{MQTT_BASE}/state"
 MQTT_STATUS_TOPIC = f"{MQTT_BASE}/status"
 
-# Home Assistant Discovery
 DISCOVERY_PREFIX = "homeassistant"
 DEVICE_ID = "autodarts_camera"
 
-STATUS_CHECK_INTERVAL = 10  # seconds
+STATUS_CHECK_INTERVAL = 10
 
 # ==================================================
 # MQTT SETUP
@@ -65,10 +89,10 @@ mqttc.loop_start()
 
 DEVICE_INFO = {
     "identifiers": [DEVICE_ID],
-    "name": "Autodarts",
-    "manufacturer": "Community",
+    "name": "Autodarts Camera",
+    "manufacturer": "Quevinsta",
     "model": "Autodarts MQTT Bridge",
-    "sw_version": "1.1.3"
+    "sw_version": "1.1.4"
 }
 
 
@@ -77,9 +101,6 @@ def publish_discovery():
         "dart1": "Dart 1",
         "dart2": "Dart 2",
         "dart3": "Dart 3",
-        "dart1_value": "Dart 1 Value",
-        "dart2_value": "Dart 2 Value",
-        "dart3_value": "Dart 3 Value",
         "summary": "Throw Summary",
         "total": "Throw Total"
     }
@@ -96,7 +117,6 @@ def publish_discovery():
         topic = f"{DISCOVERY_PREFIX}/sensor/{DEVICE_ID}/{key}/config"
         mqttc.publish(topic, json.dumps(payload), retain=True)
 
-    # 180 binary sensor
     payload_180 = {
         "name": "180",
         "state_topic": MQTT_STATE_TOPIC,
@@ -113,7 +133,6 @@ def publish_discovery():
         retain=True
     )
 
-    # Status binary sensor
     payload_status = {
         "name": "Autodarts Status",
         "state_topic": MQTT_STATUS_TOPIC,
@@ -136,19 +155,9 @@ def publish_discovery():
 # HELPER FUNCTIONS
 # ==================================================
 
-def dart_to_value(dart: str) -> int:
-    if dart.startswith("T"):
-        return int(dart[1:]) * 3
-    if dart.startswith("D"):
-        return int(dart[1:]) * 2
-    if dart.startswith("M"):
-        return 0
-    return int(dart) if dart.isdigit() else 0
-
-
 def autodarts_is_online():
     try:
-        r = requests.get(f"{AUTODARTS_HTTP_URL}/api/state", timeout=1)
+        r = requests.get(f"{AUTODARTS_HTTP_URL}/api/state", timeout=2)
         return r.status_code == 200
     except Exception:
         return False
@@ -160,66 +169,49 @@ def fetch_game_state():
         if r.status_code != 200:
             return None
         return r.json()
-    except Exception as e:
-        print("❌ Fetch error:", e)
+    except Exception:
         return None
 
 
-# ==================================================
-# STATE PUBLISHING
-# ==================================================
+def format_dart(segment):
+    if not segment:
+        return "M", 0
 
-def publish_initial_state():
-    payload = {
-        "dart1": "0",
-        "dart2": "0",
-        "dart3": "0",
-        "dart1_value": 0,
-        "dart2_value": 0,
-        "dart3_value": 0,
-        "summary": "0 | 0 | 0",
-        "total": 0,
-        "is_180": False
-    }
-    mqttc.publish(MQTT_STATE_TOPIC, json.dumps(payload), retain=True)
+    mult = segment.get("multiplier", 0)
+    num = segment.get("number", 0)
+
+    if mult == 0:
+        return "M", 0
+
+    label = segment.get("name", "")
+    value = num * mult
+    return label, value
 
 
 def publish_state(state):
     throws = state.get("throws", [])
 
-    darts = ["0", "0", "0"]
-    values = [0, 0, 0]
+    darts = []
+    total = 0
 
-    for i in range(min(3, len(throws))):
-        seg = throws[i].get("segment", {})
-        mult = seg.get("multiplier", 0)
-        num = seg.get("number", 0)
+    for t in throws[:3]:
+        label, value = format_dart(t.get("segment"))
+        darts.append(label)
+        total += value
 
-        if mult == 0:
-            dart = f"M{num}"
-        elif mult == 2:
-            dart = f"D{num}"
-        elif mult == 3:
-            dart = f"T{num}"
-        else:
-            dart = str(num)
-
-        darts[i] = dart
-        values[i] = dart_to_value(dart)
+    while len(darts) < 3:
+        darts.append("M")
 
     payload = {
         "dart1": darts[0],
         "dart2": darts[1],
         "dart3": darts[2],
-        "dart1_value": values[0],
-        "dart2_value": values[1],
-        "dart3_value": values[2],
         "summary": " | ".join(darts),
-        "total": sum(values),
-        "is_180": sum(values) == 180
+        "total": total,
+        "is_180": total == 180
     }
 
-    mqttc.publish(MQTT_STATE_TOPIC, json.dumps(payload), qos=1, retain=True)
+    mqttc.publish(MQTT_STATE_TOPIC, json.dumps(payload), qos=1, retain=False)
     print("🎯 Published:", payload)
 
 
@@ -229,11 +221,10 @@ def publish_state(state):
 
 def status_loop():
     while True:
-        mqttc.publish(
-            MQTT_STATUS_TOPIC,
-            "online" if autodarts_is_online() else "offline",
-            retain=True
-        )
+        if autodarts_is_online():
+            mqttc.publish(MQTT_STATUS_TOPIC, "online", retain=True)
+        else:
+            mqttc.publish(MQTT_STATUS_TOPIC, "offline", retain=True)
         time.sleep(STATUS_CHECK_INTERVAL)
 
 
@@ -250,7 +241,7 @@ def on_message(ws, message):
             if state:
                 publish_state(state)
     except Exception as e:
-        print("❌ WS message error:", e)
+        print("❌ WS error:", e)
 
 
 def on_open(ws):
@@ -273,7 +264,6 @@ if __name__ == "__main__":
     print("🚀 Starting Autodarts MQTT Bridge (example)")
 
     publish_discovery()
-    publish_initial_state()
 
     threading.Thread(
         target=status_loop,
@@ -292,5 +282,5 @@ if __name__ == "__main__":
         try:
             ws.run_forever()
         except Exception as e:
-            print("❌ WS crashed:", e)
+            print("❌ WebSocket crashed:", e)
         time.sleep(5)
