@@ -54,7 +54,7 @@ DEVICE_INFO = {
     "name": "Autodarts",
     "manufacturer": "Quevinsta",
     "model": "Autodarts MQTT Bridge",
-    "sw_version": "1.1.2"
+    "sw_version": "1.1.3"
 }
 
 
