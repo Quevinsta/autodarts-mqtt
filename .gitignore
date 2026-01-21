@@ -30,3 +30,10 @@ dist/
 # macOS
 .DS_Store
 
+# Local configuration
+config.json
+
+config.json
+config.json.example
+requirements.txt
+
