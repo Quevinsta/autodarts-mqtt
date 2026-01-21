@@ -9,158 +9,39 @@
 ![License](https://img.shields.io/github/license/Quevinsta/autodarts-mqtt)
 ![Stars](https://img.shields.io/github/stars/Quevinsta/autodarts-mqtt?style=social)
 
-# Autodarts MQTT Bridge
+## 🚀 Autodarts MQTT – v1.4.0
 
-Autodarts MQTT Bridge connects **Autodarts** to **Home Assistant** using **MQTT**.  
-It publishes dart throws, scores, and game state automatically via MQTT Discovery.
+This release updates the MQTT bridge and example script to be fully compatible with **Autodarts firmware 1.4.0** and introduces major stability and usability improvements.
 
-This project provides **standalone installers** for macOS and Windows — no Python knowledge required.
+### ✨ New & Improved
+- ✅ Compatibility with **Autodarts firmware 1.4.0**
+- 🎯 Board Status sensor  
+  - `Throw`
+  - `Takeout in Progress`
+  - `Takeout`
+  - `Offline`
+- 🔢 Number of Throws sensor (0–3)
+- 📊 3-Dart Average (per visit)
+- 📈 Leg Average (running average, auto-reset on win)
+- 🔄 Real-time updates via WebSocket
+- 📴 Proper offline detection and MQTT state handling
 
----
+### 🏠 Home Assistant
+- MQTT Discovery support
+- Clean sensor states when Autodarts is offline
+- Retained MQTT states for reliable dashboards & automations
 
-## ✨ Features
+### 🔐 Security & Safety
+- Example script (`autodarts_mqtt_example.py`) contains **no credentials**
+- Clear placeholders for configuration
+- Safe to publish and share
 
-- 🎯 Dart throw detection (Single / Double / Triple / Miss)
-- 🔢 Per-dart sensors (Dart 1 / Dart 2 / Dart 3)
-- 📊 Throw summary and total score
-- 💯 180 detection
-- 🔌 Autodarts status sensor (online / offline)
-- 🏠 Home Assistant MQTT Discovery (automatic entities)
-- 📦 Standalone installers (macOS & Windows)
-
----
-
-## 📥 Installation
-
-### macOS (recommended)
-1. Download `autodarts-mqtt.pkg` from **GitHub Releases**
-2. Double-click the `.pkg` installer
-3. The application is installed to:
-
-# Autodarts MQTT Bridge
-
-Autodarts MQTT Bridge connects **Autodarts** to **Home Assistant** using **MQTT**.  
-It publishes dart throws, scores, and game state automatically via MQTT Discovery.
-
-This project provides **standalone installers** for macOS and Windows — no Python knowledge required.
+### 🛠 Technical
+- Improved MQTT stability
+- Reduced MQTT spam
+- Better error handling
+- Clean separation between example and production script
 
 ---
 
-## ✨ Features
-
-- 🎯 Dart throw detection (Single / Double / Triple / Miss)
-- 🔢 Per-dart sensors (Dart 1 / Dart 2 / Dart 3)
-- 📊 Throw summary and total score
-- 💯 180 detection
-- 🔌 Autodarts status sensor (online / offline)
-- 🏠 Home Assistant MQTT Discovery (automatic entities)
-- 📦 Standalone installers (macOS & Windows)
-
----
-
-## 📥 Installation
-
-### macOS (recommended)
-1. Download `autodarts-mqtt.pkg` from **GitHub Releases**
-2. Double-click the `.pkg` installer
-3. The application is installed to:
-
-- ```/Applications/Autodarts```
-
-
----
-
-### Windows
-1. Download `autodarts-mqtt.exe` from **GitHub Releases**
-2. Place the `.exe` in a folder of your choice
-3. Double-click to run
-
-> ⚠️ Windows SmartScreen may warn on first run  
-> Click **More info → Run anyway**
-
----
-
-## ⚙️ Configuration
-
-After installation, a file named `config.json` is required **next to the executable**.
-
-### Location
-- **macOS**: `/Applications/Autodarts/config.json`
-- **Windows**: same folder as `autodarts-mqtt.exe`
-
-### Example `config.json`
-```json
-{
-  "autodarts_ws_url": "ws://AUTODARTS_IP:3180/api/events",
-  "autodarts_http_url": "http://AUTODARTS_IP:3180",
-  "mqtt_host": "MQTT_BROKER_IP",
-  "mqtt_port": 1883,
-  "mqtt_username": "MQTT_USERNAME",
-  "mqtt_password": "MQTT_PASSWORD"
-}
-```
-
-➡️ Replace all placeholder values with your own configuration.
-
-➡️ The application will not start until placeholders are replaced.
-
-▶️ Running the application
-macOS
-```
-/Applications/Autodarts/autodarts-mqtt
-```
-
-Windows
-Double-click ```autodarts-mqtt.exe```
-
----
-
-🏠 Home Assistant
-
-- Uses MQTT Discovery
-- Entities appear automatically
-- No YAML required in Home Assistant
-- Example entities
-- Dart 1 / Dart 2 / Dart 3
-- Throw Summary
-- Throw Total
-- 180 Detection
-- Autodarts Status
-
----
-
-🛠 Requirements
-
-- MQTT broker (e.g. Mosquitto)
-- Autodarts running and reachable on your network
-- Home Assistant with MQTT integration enabled
-
----
-
-⚠️ Notes
-
-- macOS Gatekeeper may warn about unsigned software
-- Windows SmartScreen warnings are normal for open-source executables
-- config.json contains sensitive data — do not share it
-
----
-
-🚀 Roadmap
-
-- Automatic startup (launchd / Windows service)
-- Docker support
-- Advanced game state sensors
-- Multi-board support
-
----
-
-📄 License
-
-- MIT License
-
----
-
-❤️ Credits
-
-Developed by Quevinsta
-Built for the Autodarts & Home Assistant community.
+**Recommended for all users running Autodarts firmware 1.4.0 or newer.**
