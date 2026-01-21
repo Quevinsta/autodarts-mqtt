@@ -73,6 +73,7 @@ DEVICE_INFO = {
     "name": "Autodarts",
     "manufacturer": "Autodarts",
     "model": "Autodarts MQTT Bridge"
+    "sw_version": "1.4.0"
 }
 
 
