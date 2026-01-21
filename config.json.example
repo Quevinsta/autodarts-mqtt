@@ -1,9 +1,0 @@
-{
-  "AUTODARTS_WS_URL": "ws://CHANGEME:3180/api/events",
-  "AUTODARTS_HTTP_URL": "http://CHANGEME:3180",
-  "MQTT_HOST": "CHANGEME",
-  "MQTT_PORT": 1883,
-  "MQTT_USERNAME": "",
-  "MQTT_PASSWORD": ""
-}
-
