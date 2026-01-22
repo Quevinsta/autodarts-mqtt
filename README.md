@@ -26,15 +26,7 @@ This project publishes live Autodarts game data to MQTT and supports automatic d
 
 ---
 
-## 📦 Installation
-See the full installation guide here:
-
-➡️ **[INSTALLATION.md](INSTALLATION.md)**
-
----
-
 ## 📋 Requirements
-- Autodarts firmware **1.4.0 or newer**
 - MQTT broker (e.g. Mosquitto, Home Assistant)
 - Python 3.9+ (if not using binaries)
 
@@ -47,15 +39,11 @@ See the full installation guide here:
 
 ---
 
-## 🏷️ Firmware Compatibility
-
-| Firmware | Supported |
-|--------|-----------|
-| 1.4.0+ | ✅ Yes |
-| < 1.4.0 | ❌ No |
+## 📬 Support
+- Issues & feature requests via GitHub
 
 ---
 
-## 📬 Support
-- Issues & feature requests via GitHub
-- Pull requests welcome
+## Installation
+- Please use Google for how to fire a Python script on your OS.
+- Adjust the credentials to your server details (Autodarts & MQTT) in the autodarts_mqtt.py.
